@@ -120,8 +120,10 @@ SPK = zeros(nNeuron,nIter*nTimes-1,nStims);
 axes(h1)
 o1 = 0;
 SonWt = zeros(2,nNeuron-l1Neuron);
-SonWt(1,1:50) = abs(randn(1,50));
-SonWt(2,51:100) = abs(randn(1,50));
+SonWt(1,1:2:end) = 1;
+SonWt(2,2:2:end) = 1;
+% SonWt(1,1:50) = abs(randn(1,50));
+% SonWt(2,51:100) = abs(randn(1,50));
 while ishandle(figNumber)
     if runFlag
         o1 = mod(o1,3)+1;
@@ -163,7 +165,7 @@ while ishandle(figNumber)
         axes(hRaster)
         SPK_plot = [SPK(:,:,1) SPK(:,:,2) SPK(:,:,3)];
         imagesc(SPK_plot)
-        colormap(hRaster,[1 1 1; C(1:max(SPK_plot(:)),:)])
+ %       colormap(hRaster,[1 1 1; C(1:max(SPK_plot(:)),:)])
         title('Raster plot')
         xlabel('Time (ms)')
 %         SPK_plot(SPK,C,hRaster)

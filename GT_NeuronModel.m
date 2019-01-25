@@ -23,15 +23,19 @@
 % spike mapping function.
 
 % Copyright (c) [2018] Washington University  in St. Louis Created by:
-% [Darshit Mehta, Ahana Gangopadhyay, Kenji Aono, Shantanu Chakrabartty] 1.
-% Gangopadhyay, A., and Chakrabartty, S. (2017). Spiking, bursting, and
-% population dynamics in a network of growth transform neurons. 2.
-% Gangopadhyay, A., Chatterjee, O., and Chakrabartty, S. (2017). Extended
-% polynomial growth transforms for design and training of generalized
-% support vector machines. IEEE Transactions on Neural Networks and
-% Learning Systems 3.  Gangopadhyay, A., Aono, K.  Mehta, D., and
-% Chakrabartty, S. (in Review). A Coupled Network of Growth Transform
-% Neurons for Spike-Encoded Auditory Feature Extraction
+% [Darshit Mehta, Ahana Gangopadhyay, Kenji Aono, Shantanu Chakrabartty]
+
+% Citations for this tool are: 
+% 1. Gangopadhyay, A., Mehta, D. and Chakrabartty, S. (2019). A Spiking
+% Growth Transform Neuron and Population Model,. BioArxiv.
+
+% 2. Gangopadhyay, A., and Chakrabartty, S. (2017). Spiking, bursting, and
+% population dynamics in a network of growth transform neurons. IEEE Trans.
+% Neural Network and Learning Systems.
+
+% 3.  Gangopadhyay, A., Aono, K.  Mehta, D., and Chakrabartty, S. (2018). 
+% A Coupled Network of Growth Transform Neurons for Spike-Encoded Auditory 
+% Feature Extraction, BioArxiv.
 % 
 % Washington University hereby grants to you a non-transferable,
 % non-exclusive, royalty-free, non-commercial, research license to use and
@@ -88,7 +92,7 @@ epsilon = 0.1;
 gd = 0.5;
 u = gd + epsilon;
 l = gd - epsilon;
-% thr = 0;
+thr = 0;
 % Initialize iteration variables
 L = 1000;
 P = [l*ones(nNeuron,1)-eps u*ones(nNeuron,1)+eps];
@@ -101,10 +105,10 @@ I_input = 0*ones(nNeuron,1);
 nSpeed = 1;
 ac_amp = zeros(nNeuron,1);
 freq = 5*ones(nNeuron,1);
-exp_ad = 9*ones(nNeuron,1);
+exp_ad = 0*ones(nNeuron,1);
 y = zeros(nNeuron,L);
 I_hist = zeros(nNeuron,L);
-% dp = zeros(nNeuron,1);
+dp = zeros(nNeuron,1);
 
 burstFlag = zeros(nNeuron,1);
 burstIter = 50*ones(nNeuron,1);
@@ -134,7 +138,7 @@ yHt = 1/nInputFields - 0.05;
 pnl_input = uipanel('Title','Input Fields','FontSize',10,...
     'BackgroundColor','white',...
     'Position',[.31 .1 .35 .3]);
-inputFieldStrings = {'Input current = ','AC Amplitude = ','AC Frequency = ','Adaptation = ','Deporalization: ', 'Burst: '};
+inputFieldStrings = {'Input current = ','AC Amplitude = ','AC Frequency = ','Adaptation = ','After-Poralization: ', 'Burst: '};
 inputFieldDefaults = {'0','0','5','0','3',''};
 
 inFieldDisp = cell(1,6);
@@ -166,7 +170,7 @@ inField{3} = uicontrol('Parent',pnl_input,'Style','slider',...
 
 
 inField{4} = uicontrol('Parent',pnl_input,'Style','slider',...
-    'Min',9,'Max',9.99, 'SliderStep',[0.01 0.1], 'Units','normalized', ...
+    'Min',0,'Max',0.999, 'SliderStep',[0.01 0.1], 'Units','normalized', ...
     'Position',[0.62 ycoord(6)+0.04 0.3 yHt-0.01],...
     'Value',exp_ad(1),'tag','exp_ad','Callback',@changepars);
 
@@ -241,11 +245,15 @@ ylabel('Neuron Index');
 set(gca,'ytick',1:nNeuron)
 
 h2 = axes('Position',[0.7 0.15 0.25 0.25]);
-I_Ax = plot(h2,1:L,I_hist(1,:));
+%I_Ax = plot(h2,1:L,I_hist(1,:));
+E_av = zeros(1,1000);
+I_Ax = plot(h2,1:1000,E_av);
 axis manual
-axis([0 1000 -1 1])
-title('Input')
+axis([0 1000 -1/nNeuron 1/nNeuron])
+title('Network Energy')
 xlabel('Time (ms)');
+ylabel('Energy (a.u.)');
+grid on;
 
 colorMap = repmat(linspace(0,0.7,30)',1,3);
 colorMap = [colorMap;[1 1 1];colorMap(end:-1:1,:)];
@@ -253,14 +261,14 @@ colorMap(1:30,1) = 1;
 colorMap(32:61,3) = 1;
 if nNeuron>1
     h3=axes('Position',[0.05 0.1 0.25 0.25]);
-    conn_im = imagesc(h3,Q);
+    conn_im = imagesc(h3,Q+I);
     colormap(colorMap)
     set(gca,'xtick',1:nNeuron,'ytick',1:nNeuron)
     ylabel('Post-synaptic')
     xlabel('Pre-synaptic')
     title('Connectivity Matrix')
     uicontrol('Style', 'popup', 'Units','normalized',...
-        'String', {'Identity','Random Sparse','From workspace'},...
+        'String', {'Identity','Random Sparse','Random Non-sparse','From workspace'},...
         'Position', [0.08  0.22 0.2 0.2],...
         'tag','Q_mat','Callback', @changeQ);
     caxis([-1 1])
@@ -277,6 +285,9 @@ dpprev = dp;
 spikecount = zeros(nNeuron,1);
 sec = 3*ones(nNeuron,1);
 dec = 0*ones(nNeuron,1);
+bcount = 3;
+W = 900;
+E_hist = zeros(1,W);
 
 while ishandle(figNumber)
     for c1 = 1:nSpeed        
@@ -285,30 +296,35 @@ while ishandle(figNumber)
         netI = I_input+ac_amp.*sin(2*pi*freq*iter/1000)+0.3*pulseFlag; % Net input current
         pulseFlag = zeros(nNeuron,1);
 
-        spkInd = (dp > thr);
+        ind = (dp > thr);
         
-        C = exp_ad/10.*C + 1*spkInd;               
+        C = (9.9+0.1*log2(1+exp_ad))/10.*C + 1*ind;               
                 
         TotInp = 1*Q*C - 0.1*C;
         a_iter = 0.5*(1+0.95*tanh(2*TotInp));
 
 %        a_iter(ind,:) = (burstFlag(ind,:) > 0).*((a_iter(ind,:).*(spikecount(ind,:) < 10)) + (spikecount(ind,:) >= 10)) + ...
 %            (1-(burstFlag(ind,:)>0));
-        a_iter(spkInd,:) = 1;        
-        spikecount(spkInd,:) = (burstFlag(spkInd,:) > 0).*(spikecount(spkInd,:) + 1) + (1-(burstFlag(spkInd,:) > 0)).*(spikecount(spkInd,:));
-        sec(spkInd,:) = (burstFlag(spkInd,:) > 0).*(a(spkInd,:).*(spikecount(spkInd,:) > 10) + 1.5*(spikecount(spkInd,:) <= 10)) + a(spkInd,:).*(1-(burstFlag(spkInd,:)>0));
-        dec(spkInd,:) = (burstFlag(spkInd,:) > 0).*(0*(spikecount(spkInd,:) > 10) + 1*(spikecount(spkInd,:) <= 10)) + 0*(1-(burstFlag(spkInd,:)>0));
-        spikecount(spkInd,:) = 0*(spikecount(spkInd,:) > 10) + spikecount(spkInd,:).*(spikecount(spkInd,:) <= 10);
-    
+        a_iter(ind,:) = 1;        
+        spikecount(ind,:) = (burstFlag(ind,:) > 0).*(spikecount(ind,:) + 1) + (1-(burstFlag(ind,:) > 0)).*(spikecount(ind,:));
+        sec(ind,:) = (burstFlag(ind,:) > 0).*(a(ind,:).*(spikecount(ind,:) > bcount) + 1.5*(spikecount(ind,:) <= bcount)) + a(ind,:).*(1-(burstFlag(ind,:)>0));
+        dec(ind,:) = (burstFlag(ind,:) > 0).*(0*(spikecount(ind,:) > bcount) + 1*(spikecount(ind,:) <= bcount)) + 0*(1-(burstFlag(ind,:)>0));        
+        spikecount(ind,:) = 0*(spikecount(ind,:) > bcount) + spikecount(ind,:).*(spikecount(ind,:) <= bcount);
+
         
-        y = [y(:,2:end), dp+ 0.5*(spkInd)];
+        y = [y(:,2:end), dp+ 0.5*(ind)];
         dpprev = dp; 
-        quant = sec.*(spkInd) - dec.*(dp <= thr);
+        quant = sec.*(ind) - dec.*(dp <= thr);
         G = 1*netI - Q*dp - 1*dp - quant; % Gradient - self-inhibitory  
         dp = (G + Fac.*dp)./(dp.*G + Fac);
         dp = a_iter.*dp + (1-a_iter).*dpprev;
+        
+        % Estimate the energy
+        En = 0.5*dp'*(Q+I)*dp - netI'*dp + sum((sec.*dp).*(dp > 0));
+        E_hist = [E_hist(2:end), En];        
+        E_av = [E_av(2:end), sum(E_hist)/W];
                
-        I_hist = [I_hist(:,2:end), netI];
+%        I_hist = [I_hist(:,2:end), netI];
 
         iter = mod(iter,100000)+1;
         burstIter = burstIter+1;
@@ -317,7 +333,8 @@ while ishandle(figNumber)
         set(nAx{n1},'ydata',y(n1,:)+n1) % Update the membrane potential plot
     end
     
-    set(I_Ax,'ydata',I_hist(nDisp,:)) % Update the input current plot
+%    set(I_Ax,'ydata',I_hist(nDisp,:)) % Update the input current plot
+    set(I_Ax,'ydata',E_av) % Update the input current plot
     drawnow
     while pauseFlag && ishandle(figNumber)
         drawnow
@@ -389,7 +406,7 @@ end
                 I_input(:,1) = 0;
                 ac_amp(:,1) = 0;
                 freq(:,1) = 5;
-                exp_ad(:,1) = 9;
+                exp_ad(:,1) = 0;
                 burstFlag(:,1) = 0;
                 a(:,1)=3;
         end
@@ -402,20 +419,20 @@ end
                 I_input(nSelect,1) = 0.1;
                 ac_amp(nSelect,1) = 0;
                 freq(nSelect,1) = 5;
-                exp_ad(nSelect,1) = 9;
+                exp_ad(nSelect,1) = 0;
                 burstFlag(nSelect,1) = 0;
             case 'Tonal Excitation'
                 I_input(nSelect,1) = 0;
                 ac_amp(nSelect,1) = 0.1;
                 freq(nSelect,1) = 5;
-                exp_ad(nSelect,1) = 9;
+                exp_ad(nSelect,1) = 0;
                 burstFlag(nSelect,1) = 0;
             case 'Bursting'
                 burstFlag(nSelect,1) = 1;
                 I_input(nSelect,1) = 0.1;
                 ac_amp(nSelect,1) = 0;
                 freq(nSelect,1) = 5;
-                exp_ad(nSelect,1) = 9;
+                exp_ad(nSelect,1) = 0;
             case 'Integration'
                 I_input(nSelect,1) = -0.02;
                 ac_amp(nSelect,1) = 0;
@@ -426,7 +443,7 @@ end
                 I_input(nSelect,1) = 0.2;
                 ac_amp(nSelect,1) = 0;
                 freq(nSelect,1) = 5;
-                exp_ad(nSelect,1) = 9.99;
+                exp_ad(nSelect,1) = 0.99;
                 burstFlag(nSelect,1) = 0;
                 
         end
@@ -454,6 +471,9 @@ end
                 Q = full(0.1*sprandn(nNeuron, nNeuron,0.1));
             case 3
                 Q = 1*(rand(nNeuron, nNeuron)-0.5);
+                for nf = 1:nNeuron
+                    Q(nf,nf) = 0;
+                end
             case 4
                 nv = evalin('base','Q');
                 disp(nv)
@@ -464,9 +484,9 @@ end
                     disp(size(nv,1))
                     disp(size(nv,2))
                 end
-        end
-        for nf = 1:nNeuron
-            Q(nf,nf) = 0;
+                for nf = 1:nNeuron
+                    Q(nf,nf) = 0;
+                end
         end
         conn_im.CData = Q;
     end
