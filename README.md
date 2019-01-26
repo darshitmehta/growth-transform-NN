@@ -8,9 +8,10 @@ GTNgpu - Sample script for running the network on MATLAB supported GPU.
 
 Copyright (c) [2018] Washington University  in St. Louis
 Created by: [Darshit Mehta, Ahana Gangopadhyay, Kenji Aono, Shantanu Chakrabartty]
-1. Gangopadhyay, A., and Chakrabartty, S. (2017). Spiking, bursting, and population dynamics in a network of growth transform neurons.
-2. Gangopadhyay, A., Chatterjee, O., and Chakrabartty, S. (2017). Extended polynomial growth transforms for design and training of generalized support vector machines. IEEE Transactions on Neural Networks and Learning Systems
-3. Gangopadhyay, A., Aono, K.  Mehta, D., and Chakrabartty, S. (in Review). A Coupled Network of Growth Transform Neurons for Spike-Encoded Auditory Feature Extraction
+1. Gangopadhyay, A., and Chakrabartty, S. Spiking, bursting, and population dynamics in a network of growth transform neurons. IEEE Transactions on Neural Networks and Learning Systems, 2017.
+2. Gangopadhyay, A., Chatterjee, O., and Chakrabartty, S. Extended polynomial growth transforms for design and training of generalized support vector machines. IEEE Transactions on Neural Networks and Learning Systems, 2017.
+3. Gangopadhyay, A., Aono, K.  Mehta, D., and Chakrabartty, S. A Coupled Network of Growth Transform Neurons for Spike-Encoded Auditory Feature Extraction. Preprint at bioRxiv, 2018
+4. Gangopadhyay, A., Mehta, D., and Chakrabartty, S. A Spiking Neuron and Population Model based on the Growth Transform Dynamical System. Preprint at bioRxiv, 2019
 
 Washington University hereby grants to you a non-transferable, non-exclusive, royalty-free, non-commercial, research license to use and copy the computer code provided here (the “Software”).  You agree to include this license and the above copyright notice in all copies of the Software.  The Software may not be distributed, shared, or transferred to any third party.  This license does not grant any rights or licenses to any other patents, copyrights, or other forms of intellectual property owned or controlled by Washington University.  If interested in obtaining a commercial license, please contact Washington University's Office of Technology Management (otm@dom.wustl.edu).
 
