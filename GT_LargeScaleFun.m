@@ -1,4 +1,4 @@
-function [y, yInit, spk] = GT_LargeScaleFun(Q,I_input,nIter,yInit)
+function [y, yInit, spk,dp] = GT_LargeScaleFun(Q,I_input,nIter,yInit,dp)
 %GROWTHTRANSFORMNEURONS Growth Transform Neuron Model
 % 	This function creates a GUI for simulating large network of Neuron
 % 	Models based on
@@ -49,78 +49,33 @@ function [y, yInit, spk] = GT_LargeScaleFun(Q,I_input,nIter,yInit)
 % THIS SOFTWARE WILL NOT BE USED FOR CLINICAL PURPOSES.
 
 nNeuron = size(Q,1);
-epsilon = 0.1;
 % Set synaptic weight matrix
 % Uncoupled case
 
 % Spike parameters
-w = 5;
-gd = 0.5;
-u = gd + epsilon;
-l = gd - epsilon;
-% P(:,1) = l + yInit/2-0.001;
-% P(:,2) = u - yInit/2+0.001;
 thr = 0;
-
-
-
-
 
 % Initialize iteration variables
 
 % Convergence hyperparameters
 C = 0*ones(nNeuron,1);  %Regularization hyper-parameter
 Fac = 10;
-a = ones(nNeuron,2);
 %spikecount = zeros(nNeuron,1);
 exp_ad = 9.99*ones(nNeuron,1);
 y = zeros(nNeuron,nIter);
 y(:,1) = yInit;
-dp = zeros(nNeuron,1);
-dpprev = dp;
 
 for c1 = 2:nIter
-    
-%     I = I_input-0.005+0.002*randn(size(I_input));
-% %     biter = 2*u-I;
-%     biter = 2*(1+epsilon)-I;
-%     bias = [0.5*biter -0.5*biter];
-%     Pprev = P;
-%     C = C.*exp(-exp_ad.*(dp>thr)/100).*exp((1-C)/100); % Adaptation
-% %     quant = w*(0.5<P & P<(0.5+epsilon)) - sec.*(P<0.5);
-%     quant = (-(P<=l)+w*sign(P-(1/2)).*(l<P & P<u)+(P>=u));
-%     G = - (bias+P+Q*[P(:,1) P(:,2)-2*epsilon]) - diag(C)*quant; % Gradient
-% %     Fac = -min(G(:))+0.1;
-%     
-%     if any(G+Fac)<0
-%         fprintf('No growth\n')
-%     end
-%     P = P.*(G + Fac); % Growth Transform
-%     P = P./(sum(P,2)*ones(1,2)); % Normalization
-%     a_iter = a; % Step size for axonal delay
-%     a_iter(dp>thr,:) = 1; %Step size = 1, if neuron is spiking
-%     P = a_iter.*P+(1-a_iter).*Pprev;
-%     dp = P(:,1)-P(:,2);
-%     y(:,c1) = P(:,1)-P(:,2)+2*epsilon;
-    
-    
      % External stimuli current
      I = I_input-0.007+0.005*randn(size(I_input));  
-     %netI = I_input+ac_amp.*sin(2*pi*freq*iter/1000)+0.3*pulseFlag; % Net input current
  
      ind = (dp > thr);        
      C = exp_ad/10.*C + 1*ind;                               
      TotInp = 1*Q*C - 0.1*C;
      a_iter = 0.5*(1+0.95*tanh(2*TotInp));
 
-     a_iter(ind,:) = 1;        
-     %spikecount(ind,:) = (burstFlag(ind,:) > 0).*(spikecount(ind,:) + 1) + (1-(burstFlag(ind,:) > 0)).*(spikecount(ind,:));
-     %sec(ind,:) = (burstFlag(ind,:) > 0).*(a(ind,:).*(spikecount(ind,:) > 10) + 1.5*(spikecount(ind,:) <= 10)) + a(ind,:).*(1-(burstFlag(ind,:)>0));
-     %dec(ind,:) = (burstFlag(ind,:) > 0).*(0*(spikecount(ind,:) > 10) + 1*(spikecount(ind,:) <= 10)) + 0*(1-(burstFlag(ind,:)>0));        
-     %spikecount(ind,:) = 0*(spikecount(ind,:) > 10) + spikecount(ind,:).*(spikecount(ind,:) <= 10);
+     a_iter(ind,:) = 1;
 
-        
-%        y = [y(:,2:end), dp+ 0.5*(ind)];
      dpprev = dp; 
 %        quant = sec.*(ind) - dec.*(dp <= thr);
      quant = 3*(ind) - 0*(dp <= thr);        
@@ -130,13 +85,7 @@ for c1 = 2:nIter
         fprintf('No growth\n')
      end
      dp = a_iter.*dp + (1-a_iter).*dpprev;
-     y(:,c1) = dp + 0.5*(ind); 
-        
-%        I_hist = [I_hist(:,2:end), netI];
-%
-%        iter = mod(iter,100000)+1;
-%        burstIter = burstIter+1;  
-    
+     y(:,c1) = dp + 0.5*(ind);
 end
 yInit = y(:,end);
 spk = y(:,2:end)>0;

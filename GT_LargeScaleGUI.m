@@ -106,7 +106,7 @@ uicontrol('Style', 'pushbutton','String','PCA Plot',...
     'Position',[0.7 0.02 0.1 0.05],...
     'tag','runFlag','Callback',@pcaButton);
 %%
-nIter = 10;
+nIter = 20;
 % rng(1234,'twister');
 
 iInput0 = zeros(nNeuron,1)-0.01;
@@ -132,9 +132,11 @@ while ishandle(figNumber)
         Y = [];
         S = [];
         yInit = zeros(nNeuron,1);
+        dp = zeros(nNeuron,1);
         iInput = iInput0;
-        inputIdx = randperm(l1Neuron,l1Neuron/2);
-        iInput(inputIdx,:) = 0.008*randn(l1Neuron/2,1);
+        nInputNeurons = round(l1Neuron/3);
+        inputIdx = randperm(l1Neuron,nInputNeurons);
+        iInput(inputIdx,:) = 0.01*randn(nInputNeurons,1);
         txt1 = text(min(Xc(1:l1Neuron))-0.5,mean(Yc(1:l1Neuron)),'',...
             'HorizontalAlignment','right','FontSize',14,'FontWeight','Bold');
         for t1 = 1:nTimes
@@ -146,7 +148,7 @@ while ishandle(figNumber)
                 I = iInput0;
                 txt1.String = '';
             end
-            [yTarget,  yInit, spk] = GT_LargeScaleFun(Q,I,nIter+1,yInit);
+            [yTarget,  yInit, spk,dp] = GT_LargeScaleFun(Q,I,nIter+1,yInit,dp);
             Y = cat(2,Y,yTarget(:,2:end));
             S = cat(2,S,spk);
             hGraph.CData = sum(spk,2);
@@ -163,9 +165,9 @@ while ishandle(figNumber)
         title('PCA of level 2 neurons')
         
         axes(hRaster)
-        SPK_plot = [SPK(:,:,1) SPK(:,:,2) SPK(:,:,3)];
-        imagesc(SPK_plot)
- %       colormap(hRaster,[1 1 1; C(1:max(SPK_plot(:)),:)])
+        SPK_plotData = [SPK(:,:,1) SPK(:,:,2) SPK(:,:,3)];
+        imagesc(SPK_plotData)
+       colormap(hRaster,[1 1 1; C(1:max(SPK_plotData(:)),:)])
         title('Raster plot')
         xlabel('Time (ms)')
 %         SPK_plot(SPK,C,hRaster)
